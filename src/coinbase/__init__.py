@@ -14,3 +14,6 @@ except PackageNotFoundError:  # pragma: no cover
     __version__ = "unknown"
 finally:
     del version, PackageNotFoundError
+
+from coinbase.base import *
+from coinbase.get_data import *
