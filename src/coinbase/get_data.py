@@ -1,7 +1,8 @@
-from coinbase.base import list_accounts, get_product
+from coinbase.base import list_accounts, get_product, list_orders
 import pandas as pd
+from datetime import datetime, timedelta
 
-def get_accounts():
+def get_accounts() -> pd.DataFrame:
     """Returns a dataframe of all accounts and their balances from Coinbase Brokerage API"""
     data = list_accounts()
     df = pd.DataFrame.from_dict(data['accounts'])
@@ -13,7 +14,7 @@ def get_accounts():
     return df
 
 
-def get_balance():
+def get_balance() -> pd.DataFrame:
     """Returns a dataframe of all accounts and their USD denominated balances from Coinbase Brokerage API"""
     df = get_accounts()
     prod = get_product()
@@ -24,3 +25,22 @@ def get_balance():
     df = pd.merge(df, pricedf, on='currency', how='outer').fillna(1)
     df['usd_value'] = round((df.available_balance+df.hold)*df.exchange_rate,2)
     return df[['name', 'currency', 'available_balance', 'hold', 'exchange_rate', 'usd_value']]
+
+def get_orders(active:bool=True, since:str=None) -> pd.DataFrame:
+    """Returns a dataframe of all orders from Coinbase Brokerage API"""
+    df = pd.DataFrame(list_orders(fill=False)['orders'])
+    df['created_time'] = pd.to_datetime(df.created_time)
+    df['created_date'] = pd.to_datetime(df.created_time.dt.date)
+    if since is None:
+        since = datetime.strftime(datetime.now().date() - timedelta(days=30), '%Y-%m-%d')
+    elif since == 'all':
+        since = '1970-01-01'
+    else:
+        try:
+            since = datetime.strftime(since.strptime(since, '%Y-%m-%d'), '%Y-%m-%d')
+        except:
+            raise ValueError('since must be in format YYYY-MM-DD')
+    if active:
+        return df.query(f'status == "OPEN" and created_date > "{since}"')
+    else:
+        return df.query(f'created_date > "{since}"')
