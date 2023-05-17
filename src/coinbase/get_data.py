@@ -26,7 +26,7 @@ def get_balance() -> pd.DataFrame:
     df['usd_value'] = round((df.available_balance+df.hold)*df.exchange_rate,2)
     return df[['name', 'currency', 'available_balance', 'hold', 'exchange_rate', 'usd_value']]
 
-def get_orders(active:bool=True, since:str=None) -> pd.DataFrame:
+def get_orders(active:bool=True, fill:bool=False, since:str=None) -> pd.DataFrame:
     """Returns a dataframe of all orders from Coinbase Brokerage API"""
     df = pd.DataFrame(list_orders(fill=False)['orders'])
     df['created_time'] = pd.to_datetime(df.created_time)
@@ -40,7 +40,10 @@ def get_orders(active:bool=True, since:str=None) -> pd.DataFrame:
             since = datetime.strftime(since.strptime(since, '%Y-%m-%d'), '%Y-%m-%d')
         except:
             raise ValueError('since must be in format YYYY-MM-DD')
+    if active&fill:
+        active=False
+        fill=True
     if active:
         return df.query(f'status == "OPEN" and created_date > "{since}"')
     else:
-        return df.query(f'created_date > "{since}"')
+        return df.query(f'status == "FILLED" and created_date > "{since}"')
