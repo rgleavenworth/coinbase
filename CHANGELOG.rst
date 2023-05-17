@@ -2,9 +2,10 @@
 Changelog
 =========
 
-Version 0.1
+Version 0.99
 ===========
 
-- Feature A added
-- FIX: nasty bug #1729 fixed
-- add your changes here!
+- Sell stop orders added
+- Fixed fee rate bug in limit orders
+- Added some more functions to get_data to get dataframes for all orders, all trades, all positions, all transactions
+- setup.cfg and doc file updates

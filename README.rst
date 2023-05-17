@@ -34,10 +34,12 @@ coinbase
 ========
 
 
-    Add a short description here!
+    A python wrapper for the coinbase v3 API
 
 
-A longer description of your project goes here...
+.. image:: https://img.shields.io/pypi/v/coinbase.svg
+    :target: https://pypi.python.org/pypi/coinbase
+    This is a python wrapper for the coinbase v3 API. It supports all Advanced Trade API endpoints and all trade types. 
 
 
 .. _pyscaffold-notes:
