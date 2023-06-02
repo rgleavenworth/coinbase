@@ -100,7 +100,7 @@ def quote_base(side:str, order_type:str, budget:float, quote_size:str, base_size
             base_size = budget
         else:
             base_size = float(base_size)
-            base_size = base_size*budget
+            base_size = round(base_size*budget,8)
     else:
         raise Exception('side must be BUY or SELL')
     return quote_size, base_size
@@ -149,9 +149,11 @@ def create_order(side:str, order_type:str='limit', productID:str='BTC-USD', quot
         else:
             budget = data.query(f'currency == "{quote_currency}"').available_balance.values[0]['value']
     elif side.upper() == 'SELL':
-        budget = data.query(f'currency == "{base_currency}"').available_balance.values[0]['value']
+        budget = round(float(data.query(f'currency == "{base_currency}"').available_balance.values[0]['value']),8)
     else:
         raise Exception('side must be BUY or SELL')
+    if debug:
+        print(f'Using {budget} {base_currency} to place order')
     quote_size, base_size = quote_base(side, order_type, budget, quote_size, base_size)
 
     if order_type.upper() == 'LIMIT':
