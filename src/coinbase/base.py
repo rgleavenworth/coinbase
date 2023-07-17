@@ -131,12 +131,17 @@ def stop_order(base_size:str, limit_price:float, stop_price:float, gtc:bool=True
         stop_order_type = 'gtd'
     return {f"stop_limit_stop_limit_{stop_order_type}": {"limit_price": str(limit_price), "base_size": str(base_size), "stop_price": str(stop_price)}}
 
-def create_order(side:str, order_type:str='limit', productID:str='BTC-USD', quote_size:str='max', base_size:str='max', limit_price:float=None, stop_price:float=None, client_oid:str=None, gtd:bool=False, end_time:str=None, fee_rate:float=40, debug:bool=False) -> dict:
+def create_order(side:str, order_type:str='limit', productID:str='BTC-USD', quote_size:str='max', base_size:str='max', limit_price:float=None, stop_price:float=None, client_oid:str=None, gtd:bool=False, end_time:str=None, fee_rate='maker', debug:bool=False) -> dict:
     """Creates an order from Coinbase Brokerage API"""
+    trans = list_transactions()
+    maker_fees = float(trans['fee_tier']['maker_fee_rate'])
+    taker_fees = float(trans['fee_tier']['taker_fee_rate'])
+    fees = maker_fees #default to maker fees
     if order_type.upper() == 'LIMIT' or order_type.upper() == 'STOP':
         if limit_price is None:
             raise ValueError('limit_price must be specified for limit or stop orders')
         if order_type.upper() == 'STOP':
+            fees = taker_fees
             if stop_price is None:
                 stop_price = limit_price-100
                 warnings.warn(f'stop_price not specified. Using {stop_price}')
@@ -145,7 +150,7 @@ def create_order(side:str, order_type:str='limit', productID:str='BTC-USD', quot
     quote_currency = productID.split('-')[1]
     if side.upper() == 'BUY':
         if order_type.upper() == 'LIMIT' or order_type.upper() == 'STOP':
-            budget = round(float(data.query(f'currency == "{quote_currency}"').available_balance.values[0]['value'])*(1-fee_rate/10000)/float(limit_price),8)
+            budget = round(float(data.query(f'currency == "{quote_currency}"').available_balance.values[0]['value'])*(1-fees)/float(limit_price),8)
         else:
             budget = data.query(f'currency == "{quote_currency}"').available_balance.values[0]['value']
     elif side.upper() == 'SELL':

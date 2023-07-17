@@ -30,6 +30,7 @@ def get_orders(active:bool=True, fill:bool=False, since:str=None) -> pd.DataFram
     """Returns a dataframe of all orders from Coinbase Brokerage API"""
     df = pd.DataFrame(list_orders(fill=False)['orders'])
     df['total_fees'] = round(df.total_fees.astype(float), 2)
+    df['filled_value'] = round(df.filled_value.astype(float), 2)
     df['created_time'] = pd.to_datetime(df.created_time)
     df['created_date'] = pd.to_datetime(df.created_time.dt.date)
     df['last_fill_time'] = pd.to_datetime(df.last_fill_time)
@@ -53,7 +54,11 @@ def get_orders(active:bool=True, fill:bool=False, since:str=None) -> pd.DataFram
         return df.query(f'status == "FILLED" and created_date > "{since}"')
 
 
-def get_fees() -> pd.DataFrame:
+def get_fees(breakdown:bool=False) -> pd.DataFrame:
     """Returns a dataframe of all fees from Coinbase Brokerage API"""
     orders = get_orders(fill=True)
-    return orders.pivot_table(index='filled_month', columns = 'product_id', values='total_fees', aggfunc='sum').fillna(0)
+    orders['fee_rate'] = round(orders.total_fees/orders.filled_value*100, 2)
+    if breakdown:
+        return orders.pivot_table(index=['filled_date', 'side', 'order_type', 'client_order_id', 'fee_rate'], columns = 'product_id', values='total_fees', aggfunc='sum').fillna(0)
+    else:
+        return orders.pivot_table(index='filled_month', columns = 'product_id', values='total_fees', aggfunc='sum').fillna(0)
